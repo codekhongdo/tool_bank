@@ -1,0 +1,3 @@
+# TODO cho bạn tự code (Bước 2+). Mentor không code hộ.
+# Gợi ý: dùng pydantic-settings BaseSettings để đọc .env, KHÔNG in secret ra log.
+# Bạn tự làm: class Settings(BaseSettings): SEPAY_API_TOKEN: str, SEPAY_WEBHOOK_AUTH_TOKEN: str, EXPECTED_CODE: str = "THCSC3", ...

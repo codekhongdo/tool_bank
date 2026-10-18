@@ -1,0 +1,43 @@
+# .gitignore — không đẩy secret + excel thật lên GitHub
+
+# --- ENV / SECRET (quan trọng nhất) ---
+.env
+.env.*
+.env.example
+
+# --- PYTHON ---
+__pycache__/
+*.py[cod]
+*$py.class
+venv/
+.venv/
+*.egg-info/
+dist/
+build/
+
+# --- EXCEL OUTPUT (dữ liệu thật: tên + số tiền) ---
+data/exports/*.xlsx
+data/exports/*.xls
+data/exports/*.csv
+~$*.xlsx
+
+# --- DB SQLITE nếu sau này dùng ---
+*.db
+*.sqlite3
+
+# --- IDE / OS ---
+.vscode/
+.idea/
+*.swp
+.DS_Store
+Thumbs.db
+
+# --- LOG ---
+*.log
+logs/
+
+# --- MEMORY LOCAL (note riêng, không share) ---
+memory-bank/
+skills/
+.clinerules
+docs/
