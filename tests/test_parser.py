@@ -1,5 +1,19 @@
-# TODO Bước 2 cho bạn: viết 3 test đầu tiên cho parser
-# def test_hop_le(): assert parse_transfer("NGUYEN VAN A THCSC3", ...) is not None
-# def test_thieu_ma(): assert parse_transfer("NGUYEN VAN A", ...) is None
-# def test_hoa_thuong(): assert parse_transfer("thcsc3 tran thi b", ...).ten == "TRAN THI B"
-# Chạy: pytest tests/test_parser.py -v
+from app.services.parser import parse_transfer
+def test_hop_le():
+    p = parse_transfer("NGUYEN VAN A THCSC3", 100000, "2026-10-19 10:00", "tx001")
+    assert p is not None
+    assert p.ten == "NGUYEN VAN A"
+    assert p.ma_tham_chieu == "THCSC3"
+    assert p.so_tien == 100000
+    assert p.noi_dung_goc == "NGUYEN VAN A THCSC3"
+
+
+def test_thieu_ma():
+    p = parse_transfer("NGUYEN VAN A", 100000, "2026-10-19 10:00", "tx002")
+    assert p is None
+
+
+def test_hoa_thuong():
+    p = parse_transfer("thcsc3 tran thi b", 50000, "2026-10-19 10:00", "tx003")
+    assert p is not None
+    assert p.ten == "TRAN THI B"
