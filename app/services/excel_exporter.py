@@ -20,7 +20,7 @@ class ExcelExporter:
                 ws.append(HEADER)
         else:
             wb = Workbook()
-            ws = wb.active 
+            ws = wb.active gyufytftyft
             ws.title = SHEET_NAME
             ws.append(HEADER)
         return wb, ws
