@@ -3,9 +3,9 @@ def test_hop_le():
     p = parse_transfer("NGUYEN VAN A THCSC3", 100000, "2026-10-19 10:00", "tx001")
     assert p is not None
     assert p.ten == "NGUYEN VAN A"
-    assert p.ma_tham_chieu == "THCSC3"
-    assert p.so_tien == 100000
-    assert p.noi_dung_goc == "NGUYEN VAN A THCSC3"
+    assert p.maThamChieu == "THCSC3"
+    assert p.soTien == 100000
+    assert p.noiDungGoc == "NGUYEN VAN A THCSC3"
 
 
 def test_thieu_ma():
