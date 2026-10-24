@@ -2,7 +2,7 @@ import re
 from app.models.payment import Payment
 
 
-def parse_transfer(content: str, so_tien: int, thoi_gian: str, transaction_id: str) -> Payment | None:
+def parse_transfer(content: str, soTien: int, thoiGian: str, transactionId: str) -> Payment | None:
     upper_content = content.upper()
     if "THCSC3" not in upper_content:
         return None
@@ -15,10 +15,10 @@ def parse_transfer(content: str, so_tien: int, thoi_gian: str, transaction_id: s
     if not ten:
         return None
     return Payment(
-        thoi_gian=thoi_gian,
+        thoiGian=thoiGian,
         ten=ten,
-        ma_tham_chieu="THCSC3",
-        so_tien=so_tien,
-        noi_dung_goc=content,
-        transaction_id=transaction_id,
+        maThamChieu="THCSC3",
+        soTien=soTien,
+        noiDungGoc=content,
+        transactionId=transactionId,
     )
