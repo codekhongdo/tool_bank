@@ -1,51 +1,81 @@
 # Tool Bank — SePay THCSC3 Tracker
 
-Ứng dụng FastAPI nhận webhook biến động số dư từ SePay, lọc nội dung chuyển khoản có mã `THCSC3`, sau đó ghi dữ liệu hợp lệ vào một file Excel duy nhất.
+> Hệ thống tự động tiếp nhận giao dịch từ SePay, lọc nội dung chuyển khoản theo mã `THCSC3` và lưu danh sách người chuyển tiền vào Excel.
 
-## Luồng hoạt động
+[![Python](https://img.shields.io/badge/Python-3.10%2B-3776AB?logo=python&logoColor=white)](https://www.python.org/)
+[![FastAPI](https://img.shields.io/badge/FastAPI-API-009688?logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/)
+[![Tests](https://img.shields.io/badge/tests-6%20passed-2ea44f)](#ki%E1%BB%83m-th%E1%BB%AD)
 
-```text
-Ngân hàng → SePay → FastAPI webhook → xác thực token → parser THCSC3 → payments.xlsx
-```
+## Giới thiệu
 
-Endpoint nhận webhook:
-
-```text
-POST /api/webhooks/sepay
-```
-
-Endpoint kiểm tra server:
+**Tool Bank** là mini project xây dựng bằng Python và FastAPI, phục vụ việc theo dõi các khoản chuyển tiền có nội dung theo mẫu:
 
 ```text
-GET /health
+<Tên người chuyển> THCSC3
 ```
 
-## Công nghệ
+Ứng dụng nhận webhook từ SePay, xác thực request bằng Bearer token, phân tích nội dung chuyển khoản và ghi giao dịch hợp lệ vào file `payments.xlsx`.
 
-- Python 3.10+
-- FastAPI và Uvicorn
-- Pydantic Settings
-- openpyxl
-- pytest
-- Ngrok để expose server local qua HTTPS
+Project được xây dựng theo hướng tách lớp rõ ràng, dễ học, dễ kiểm thử và có thể mở rộng thêm database hoặc giao diện quản trị trong tương lai.
+
+## Luồng xử lý
+
+```mermaid
+flowchart LR
+    A[Ngân hàng] --> B[SePay]
+    B -->|POST webhook| C[FastAPI]
+    C --> D{Xác thực token}
+    D -->|Sai| E[401 Unauthorized]
+    D -->|Đúng| F[Parser THCSC3]
+    F -->|Thiếu mã| G[Ignored]
+    F -->|Hợp lệ| H[Chống trùng transaction ID]
+    H -->|Đã tồn tại| I[Duplicate]
+    H -->|Giao dịch mới| J[payments.xlsx]
+```
+
+## Tính năng
+
+- Nhận webhook giao dịch từ SePay.
+- Xác thực `Authorization: Bearer <token>`.
+- Hỗ trợ nội dung không phân biệt chữ hoa, chữ thường.
+- Lọc giao dịch có mã `THCSC3`.
+- Tách tên người chuyển và giữ lại nội dung gốc.
+- Ghi dồn vào một file Excel duy nhất.
+- Chống ghi trùng bằng transaction ID.
+- Có khóa ghi file để xử lý request đồng thời an toàn hơn.
+- Có test parser và test webhook bằng pytest.
+- Có thể expose server local qua Ngrok để SePay truy cập.
+
+## Công nghệ sử dụng
+
+| Công nghệ | Mục đích |
+|---|---|
+| Python 3.10+ | Ngôn ngữ chính |
+| FastAPI | Xây dựng HTTP API |
+| Uvicorn | Chạy ứng dụng ASGI |
+| Pydantic Settings | Quản lý cấu hình môi trường |
+| openpyxl | Đọc và ghi file Excel |
+| pytest | Kiểm thử tự động |
+| Ngrok | Tạo HTTPS public cho môi trường local |
 
 ## Cài đặt
 
-Từ thư mục dự án `d:\tool_bank`:
+Mở PowerShell tại thư mục dự án:
 
 ```powershell
+cd d:\tool_bank
 python -m venv venv
 .\venv\Scripts\Activate.ps1
 pip install -r requirements.txt
 ```
 
-Tạo file cấu hình local từ file mẫu:
+Tạo file cấu hình local:
 
 ```powershell
 Copy-Item .env.example .env
 ```
 
-Sau đó điền các giá trị thật vào `.env`:
+Điền các giá trị phù hợp vào `.env`:
 
 ```env
 SEPAY_API_TOKEN=your_sepay_api_token
@@ -58,42 +88,70 @@ APP_HOST=127.0.0.1
 APP_PORT=8000
 ```
 
-Không commit `.env` hoặc token lên Git.
+> Không commit `.env`, token hoặc dữ liệu giao dịch thật lên Git.
 
-## Chạy kiểm thử
+## Kiểm thử
+
+Chạy toàn bộ test:
 
 ```powershell
 pytest -v
 ```
 
-Test hiện có kiểm tra:
+Bộ test hiện tại kiểm tra:
 
-- Parser nhận diện đúng hoặc loại nội dung thiếu `THCSC3`.
-- Token sai trả `401` trước khi xử lý body.
-- Nhiều webhook đồng thời không làm hỏng file Excel.
-- Cùng một `transaction_id` chỉ được ghi một lần.
+- Parser xử lý nội dung hợp lệ.
+- Parser loại nội dung thiếu `THCSC3`.
+- Token sai vẫn trả `401` khi body không hợp lệ.
+- Nhiều request đồng thời không làm hỏng workbook.
+- Nhiều request cùng transaction ID chỉ ghi một dòng.
 
-## Chạy server local
+Kết quả hiện tại:
+
+```text
+6 passed
+```
+
+## Chạy ứng dụng
 
 ```powershell
 uvicorn app.main:app --host 0.0.0.0 --port 8000
 ```
 
-Kiểm tra endpoint health trong terminal khác:
+Kiểm tra server:
 
 ```powershell
 Invoke-RestMethod http://127.0.0.1:8000/health
 ```
 
-Kết quả mong muốn:
+Kết quả:
 
 ```json
 {"status":"ok"}
 ```
 
-## Payload webhook
+API documentation của FastAPI có thể xem tại:
 
-Code hiện tại đọc các trường SePay sau:
+```text
+http://127.0.0.1:8000/docs
+```
+
+## Webhook API
+
+### Endpoint
+
+```text
+POST /api/webhooks/sepay
+```
+
+### Header
+
+```text
+Authorization: Bearer <SEPAY_WEBHOOK_AUTH_TOKEN>
+Content-Type: application/json
+```
+
+### Payload mẫu
 
 ```json
 {
@@ -104,13 +162,9 @@ Code hiện tại đọc các trường SePay sau:
 }
 ```
 
-Header xác thực:
+### Response
 
-```text
-Authorization: Bearer <SEPAY_WEBHOOK_AUTH_TOKEN>
-```
-
-Phản hồi thành công:
+Giao dịch hợp lệ và chưa tồn tại:
 
 ```json
 {"success":true,"status":"ok"}
@@ -118,67 +172,86 @@ Phản hồi thành công:
 
 Các trạng thái khác:
 
-- `ignored`: nội dung không có mã `THCSC3`.
-- `duplicate`: `id` đã tồn tại trong Excel.
+| Status | Ý nghĩa |
+|---|---|
+| `ok` | Đã ghi giao dịch mới vào Excel |
+| `ignored` | Nội dung không chứa `THCSC3` |
+| `duplicate` | Transaction ID đã tồn tại |
 
-## Expose bằng Ngrok
+## Kết nối SePay qua Ngrok
 
-Giữ Uvicorn đang chạy, mở terminal khác:
+Giữ Uvicorn đang chạy và mở terminal khác:
 
 ```powershell
 ngrok http 8000
 ```
 
-Dùng URL HTTPS Ngrok trong cấu hình SePay:
+Copy URL HTTPS Ngrok vào cấu hình webhook của SePay:
 
 ```text
 https://your-ngrok-domain.ngrok-free.app/api/webhooks/sepay
 ```
 
-SePay cần gửi header `Authorization` với đúng token trong `.env`.
+SePay cần gửi Authorization token giống giá trị `SEPAY_WEBHOOK_AUTH_TOKEN` trong `.env`.
 
-## File Excel
+## Dữ liệu Excel
 
-Dữ liệu được ghi vào:
+File kết quả mặc định:
 
 ```text
 data/exports/payments.xlsx
 ```
 
-Sheet:
+Tên sheet:
 
 ```text
 payments
 ```
 
-Các cột:
+Các cột dữ liệu:
 
 ```text
 thoiGian | ten | maThamChieu | soTien | noiDungGoc | transactionId
 ```
 
-Không mở `payments.xlsx` bằng Excel trong lúc server đang nhận webhook. Excel có thể khóa file và khiến `openpyxl` gặp lỗi `PermissionError` khi lưu.
+Không mở file Excel trong lúc server đang nhận webhook. Microsoft Excel có thể khóa file và khiến `openpyxl` gặp lỗi `PermissionError` khi lưu.
 
-## Cấu trúc chính
+## Cấu trúc dự án
 
 ```text
 app/
-├── api/webhooks/sepay.py       # HTTP endpoint và xác thực
-├── core/config.py              # Đọc cấu hình từ .env
-├── models/payment.py           # Payment dataclass
-├── services/parser.py          # Lọc và tách nội dung THCSC3
+├── api/webhooks/sepay.py       # Endpoint và xác thực webhook
+├── core/config.py              # Đọc cấu hình từ môi trường
+├── models/payment.py           # Mô hình Payment
+├── services/parser.py          # Phân tích nội dung THCSC3
 ├── services/excel_exporter.py  # Ghi Excel và chống trùng
 └── main.py                     # Khởi tạo FastAPI
 
 tests/
-├── test_parser.py
-└── test_webhook.py
+├── test_parser.py              # Test parser
+└── test_webhook.py             # Test API webhook
+
+pytest.ini                      # Cấu hình pytest
+.env.example                   # Mẫu biến môi trường
+requirements.txt               # Danh sách thư viện
 ```
 
-## Lưu ý bảo mật và vận hành
+## Bảo mật và giới hạn
 
-- Không hardcode token trong source code.
-- Không commit `.env` hoặc file Excel chứa dữ liệu thật.
-- Dùng giao dịch nhỏ khi kiểm thử thật.
-- URL Ngrok miễn phí có thể thay đổi sau mỗi lần khởi động.
-- Máy chạy Uvicorn và Ngrok phải luôn bật để nhận webhook.
+- Không hardcode secret trong source code.
+- Không commit `.env` và file Excel chứa dữ liệu thật.
+- Chỉ dùng giao dịch nhỏ khi kiểm thử thực tế.
+- Ngrok miễn phí có thể thay đổi URL sau mỗi lần khởi động.
+- Uvicorn và Ngrok phải tiếp tục chạy để nhận webhook.
+- Excel phù hợp cho mini project hoặc quy mô nhỏ; khi dữ liệu lớn nên chuyển sang database.
+
+## Trạng thái project
+
+Project mini đã hoàn thiện các chức năng cốt lõi:
+
+- Nhận webhook.
+- Xác thực request.
+- Parse nội dung `THCSC3`.
+- Ghi Excel.
+- Chống trùng giao dịch.
+- Kiểm thử tự động.
