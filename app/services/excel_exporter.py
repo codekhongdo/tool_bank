@@ -1,6 +1,7 @@
 from pathlib import Path
 from openpyxl import Workbook, load_workbook
 from app.models.payment import Payment
+from app.core.config import get_settings
 import threading
 
 HEADER = ["thoiGian", "ten", "maThamChieu", "soTien", "noiDungGoc", "transactionId"]
@@ -10,7 +11,12 @@ SHEET_NAME = "payments"
 class ExcelExporter:
     _WRITE_LOCK = threading.Lock()
 
-    def __init__(self, file_path: str = r"d:\tool_bank\data\exports\payments.xlsx"):
+    def __init__(self, file_path: str | None = None):
+        if file_path is None:
+            settings = get_settings()
+            file_path = str(
+                Path(settings.EXCEL_OUTPUT_DIR) / settings.EXCEL_FILE_NAME
+            )
         self.file_path = Path(file_path)
         self.file_path.parent.mkdir(parents=True, exist_ok=True)
 
